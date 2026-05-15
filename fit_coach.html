@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0b1020" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="FitCoach" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>FitCoach · AI 运动计划助手</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --bg-2: #11172e;
+    --card: #161d3a;
+    --card-2: #1c2548;
+    --accent: #7c5cff;
+    --accent-2: #22d3ee;
+    --good: #22c55e;
+    --warn: #f59e0b;
+    --bad: #ef4444;
+    --text: #e6e8f2;
+    --muted: #8a93b8;
+    --border: #2a335c;
+    --shadow: 0 10px 30px rgba(0,0,0,.35);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft Yahei", sans-serif;
+    background: radial-gradient(800px 600px at 10% -10%, #1a2155 0%, transparent 60%),
+                radial-gradient(700px 500px at 110% 10%, #2a1a55 0%, transparent 55%),
+                var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, textarea, select { font-family: inherit; }
+
+  /* Top bar */
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: calc(10px + var(--safe-top)) 16px 10px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(11,16,32,.85); backdrop-filter: blur(10px);
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; font-size: 16px;
+  }
+  .logo {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; color: #0b1020; font-weight: 900;
+    font-size: 13px;
+    box-shadow: var(--shadow);
+  }
+  .badge {
+    display: inline-block; padding: 2px 7px; border-radius: 999px;
+    font-size: 10px; font-weight: 700; background: var(--card-2);
+    color: var(--accent-2); border: 1px solid var(--border);
+    margin-left: 4px;
+  }
+  .top-actions { display: flex; gap: 8px; align-items: center; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); display: grid; place-items: center;
+    cursor: pointer; font-size: 16px;
+  }
+  .btn {
+    padding: 8px 14px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--card);
+    color: var(--text); font-size: 13px; transition: all .15s ease;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: none; color: #0b1020; font-weight: 700;
+  }
+  .btn.ghost { background: transparent; }
+  .btn.danger { color: #ffd5d5; border-color: #5b2a2a; }
+
+  /* Main pages */
+  main {
+    position: fixed;
+    top: calc(56px + var(--safe-top));
+    bottom: calc(64px + var(--safe-bottom));
+    left: 0; right: 0;
+    overflow: hidden;
+  }
+  .page {
+    position: absolute; inset: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 14px 20px;
+    display: none;
+  }
+  .page.active { display: block; }
+  .page.chat-page { padding: 0; display: none; flex-direction: column; }
+  .page.chat-page.active { display: flex; }
+
+  /* Bottom tab bar */
+  nav.bottom {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    padding: 6px 4px calc(6px + var(--safe-bottom));
+    background: rgba(11,16,32,.92); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
+    z-index: 50;
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 6px 0; cursor: pointer; color: var(--muted);
+    font-size: 10px; font-weight: 600;
+  }
+  .nav-item .ic { font-size: 20px; line-height: 1; }
+  .nav-item.active { color: var(--accent-2); }
+  .nav-item.active .ic { transform: translateY(-1px); }
+
+  /* Chat */
+  .chat-header {
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(34,211,238,.10));
+    flex-shrink: 0;
+  }
+  .chat-header h3 { margin: 0 0 2px; font-size: 15px; }
+  .chat-header small { color: var(--muted); font-size: 11px; }
+  .chat-body {
+    flex: 1; overflow-y: auto; padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .msg { max-width: 88%; padding: 10px 13px; border-radius: 14px; line-height: 1.55; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+  .msg.user { align-self: flex-end; background: linear-gradient(135deg, #7c5cff, #6244e0); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot { align-self: flex-start; background: var(--card-2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .msg.bot.thinking { color: var(--muted); font-style: italic; }
+  .quick-prompts {
+    display: flex; gap: 6px; padding: 6px 12px 8px;
+    overflow-x: auto; flex-shrink: 0;
+    background: var(--bg-2);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .quick-prompts::-webkit-scrollbar { display: none; }
+  .chip {
+    padding: 6px 12px; border-radius: 999px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--card); color: var(--muted);
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .chip:active { background: var(--card-2); }
+  .chat-input {
+    border-top: 1px solid var(--border); padding: 10px;
+    display: flex; gap: 8px; align-items: flex-end;
+    background: var(--bg-2);
+    flex-shrink: 0;
+  }
+  .chat-input textarea {
+    flex: 1; resize: none; min-height: 40px; max-height: 100px;
+    background: var(--card-2); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); padding: 10px 12px; font: inherit;
+    font-size: 16px; /* prevent iOS zoom */
+  }
+  .chat-input textarea:focus { outline: 2px solid var(--accent); }
+  .chat-input .send-btn {
+    padding: 10px 16px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0b1020; font-weight: 700; font-size: 14px;
+  }
+
+  /* Page headers */
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .page-header h2 { margin: 0; font-size: 17px; }
+
+  /* Schedule */
+  .view-toggle { display: flex; gap: 4px; background: var(--card); padding: 3px; border-radius: 8px; border: 1px solid var(--border); }
+  .view-toggle button { padding: 5px 10px; font-size: 11px; border: none; background: transparent; color: var(--muted); border-radius: 6px; cursor: pointer; }
+  .view-toggle button.active { background: var(--accent); color: #0b1020; font-weight: 700; }
+
+  .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 6px; }
+  .week-nav button { flex: 1; padding: 8px; font-size: 12px; }
+  .week-nav button.today-btn { flex: 0 0 auto; padding: 8px 14px; }
+
+  .day-list { display: flex; flex-direction: column; gap: 10px; }
+  .day-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px;
+  }
+  .day-card.today { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(124,92,255,.2); }
+  .day-card-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .day-name { font-weight: 700; font-size: 14px; }
+  .day-date { color: var(--muted); font-size: 11px; }
+  .workout-item {
+    background: var(--card-2); border-radius: 10px; padding: 10px;
+    margin-top: 8px; font-size: 13px; line-height: 1.45;
+    border-left: 3px solid var(--accent);
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+  }
+  .workout-item.done { opacity: .55; border-left-color: var(--good); }
+  .workout-item.done .wname { text-decoration: line-through; }
+  .workout-item .meta { color: var(--muted); font-size: 11.5px; margin-top: 3px; }
+  .check-btn {
+    cursor: pointer; font-size: 16px; padding: 6px 10px; border-radius: 8px;
+    background: var(--card); border: 1px solid var(--border); color: var(--muted);
+    flex-shrink: 0;
+  }
+  .check-btn.done { color: var(--good); border-color: var(--good); }
+  .day-rest { color: var(--muted); font-size: 12px; font-style: italic; padding: 8px 0; }
+
+  /* Month view */
+  .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .month-cell {
+    background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    aspect-ratio: 1; padding: 4px; font-size: 10px; display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .month-cell.dim { opacity: .3; }
+  .month-cell.today { border-color: var(--accent); }
+  .month-cell .num { font-weight: 700; font-size: 11px; }
+  .dot-row { display: flex; gap: 2px; flex-wrap: wrap; margin-top: auto; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .dot.done { background: var(--good); }
+  .month-header-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+  .month-header-row div { text-align: center; font-size: 10px; color: var(--muted); padding: 4px 0; }
+
+  /* Library */
+  .library-list { display: flex; flex-direction: column; gap: 10px; }
+  .exercise-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px;
+  }
+  .exercise-card h4 { margin: 0 0 4px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  .exercise-card .cat { font-size: 10px; color: var(--accent-2); padding: 2px 8px; background: rgba(34,211,238,.1); border-radius: 999px; }
+  .exercise-card .desc { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-top: 4px; }
+  .filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+  .filter-chip {
+    padding: 6px 12px; border-radius: 999px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--card); color: var(--muted);
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .filter-chip.active { background: var(--accent); color: #0b1020; font-weight: 700; border-color: var(--accent); }
+
+  /* Progress */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+  }
+  .stat-card.full { grid-column: 1 / -1; }
+  .stat-label { color: var(--muted); font-size: 11px; }
+  .stat-value { font-size: 24px; font-weight: 800; margin-top: 4px;
+                background: linear-gradient(135deg, var(--accent), var(--accent-2));
+                -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .progress-bar { height: 6px; background: var(--card-2); border-radius: 999px; overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .4s ease; }
+  .activity-feed { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .activity-feed h4 { margin: 0 0 8px; font-size: 14px; }
+  .activity-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+  .activity-item:last-child { border: none; }
+  .activity-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+
+  /* Lifestyle */
+  .lifestyle-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px; margin-bottom: 10px;
+  }
+  .lifestyle-card h4 { margin: 0 0 6px; font-size: 14px; }
+  .lifestyle-card p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* Modal */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none;
+    align-items: flex-end; justify-content: center; z-index: 100;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--card); border-top: 1px solid var(--border);
+    border-radius: 18px 18px 0 0;
+    padding: 22px 18px calc(20px + var(--safe-bottom));
+    width: 100%; max-width: 500px;
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal h3 { margin: 0 0 14px; font-size: 17px; }
+  .modal input, .modal select {
+    width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card-2); color: var(--text); font-size: 16px; margin-bottom: 10px;
+  }
+  .modal label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; margin-top: 8px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .modal-actions .btn { flex: 1; padding: 12px; font-size: 14px; }
+
+  .empty-state {
+    text-align: center; padding: 50px 20px; color: var(--muted);
+  }
+  .empty-state .big { font-size: 44px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; margin: 8px 0 16px; }
+
+  /* Install hint */
+  .install-hint {
+    position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 12px; right: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0b1020; padding: 12px 14px; border-radius: 12px;
+    font-size: 13px; font-weight: 600; box-shadow: var(--shadow);
+    z-index: 60; display: none;
+    align-items: center; gap: 10px;
+  }
+  .install-hint.show { display: flex; }
+  .install-hint .close { margin-left: auto; cursor: pointer; font-size: 18px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a335c; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo">FC</div>
+    <div>FitCoach<span class="badge">AI</span></div>
+  </div>
+  <div class="top-actions">
+    <button class="icon-btn" onclick="openSettings()" title="设置">⚙</button>
+  </div>
+</header>
+
+<main>
+  <!-- Chat Page -->
+  <div class="page chat-page active" id="page-chat">
+    <div class="chat-header">
+      <h3>💬 AI 运动教练</h3>
+      <small id="apiStatus">未配置 API · 使用本地模拟回复</small>
+    </div>
+    <div class="chat-body" id="chatBody"></div>
+    <div class="quick-prompts" id="quickPrompts">
+      <div class="chip" onclick="quickPrompt('我想要一个一周的减脂计划，每周3次，每次40分钟，主要在家做')">减脂入门</div>
+      <div class="chip" onclick="quickPrompt('我想增肌，每周4次去健身房，每次1小时，已有半年基础')">增肌进阶</div>
+      <div class="chip" onclick="quickPrompt('我久坐办公，想改善体态和肩颈，每天有15分钟')">改善体态</div>
+      <div class="chip" onclick="quickPrompt('我准备跑10公里比赛，离比赛还有8周，请帮我规划')">跑步备赛</div>
+    </div>
+    <div class="chat-input">
+      <textarea id="chatInput" rows="1" placeholder="目标、可用时间、场地、基础…"></textarea>
+      <button class="send-btn" onclick="sendMsg()">发送</button>
+    </div>
+  </div>
+
+  <!-- Schedule Page -->
+  <div class="page" id="page-schedule"></div>
+
+  <!-- Library Page -->
+  <div class="page" id="page-library"></div>
+
+  <!-- Progress Page -->
+  <div class="page" id="page-progress"></div>
+
+  <!-- Lifestyle Page -->
+  <div class="page" id="page-lifestyle"></div>
+</main>
+
+<nav class="bottom">
+  <div class="nav-item active" data-page="chat" onclick="switchPage('chat')">
+    <div class="ic">💬</div><div>对话</div>
+  </div>
+  <div class="nav-item" data-page="schedule" onclick="switchPage('schedule')">
+    <div class="ic">📅</div><div>日程</div>
+  </div>
+  <div class="nav-item" data-page="library" onclick="switchPage('library')">
+    <div class="ic">🏋</div><div>项目</div>
+  </div>
+  <div class="nav-item" data-page="progress" onclick="switchPage('progress')">
+    <div class="ic">📊</div><div>进度</div>
+  </div>
+  <div class="nav-item" data-page="lifestyle" onclick="switchPage('lifestyle')">
+    <div class="ic">🥗</div><div>生活</div>
+  </div>
+</nav>
+
+<!-- Install hint banner -->
+<div class="install-hint" id="installHint">
+  <span>📱 添加到主屏幕，像 App 一样使用</span>
+  <span class="close" onclick="dismissInstall()">×</span>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <h3>⚙ 设置</h3>
+    <label>OpenAI API Key（仅保存在本地）</label>
+    <input type="password" id="apiKey" placeholder="sk-..." />
+    <label>模型</label>
+    <select id="apiModel">
+      <option value="gpt-4o-mini">gpt-4o-mini（快速便宜）</option>
+      <option value="gpt-4o">gpt-4o（高质量）</option>
+      <option value="gpt-4-turbo">gpt-4-turbo</option>
+      <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+    </select>
+    <label>API Base URL（可选）</label>
+    <input type="text" id="apiBase" placeholder="https://api.openai.com/v1" />
+    <label>本周训练目标次数</label>
+    <input type="number" id="weekGoal" min="1" max="14" />
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeSettings()">取消</button>
+      <button class="btn danger" onclick="resetAll()">清空数据</button>
+      <button class="btn primary" onclick="saveSettings()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========================================================
+   State
+   ======================================================== */
+const STORAGE_KEY = 'fitcoach_v2';
+const defaultState = {
+  apiKey: '',
+  apiModel: 'gpt-4o-mini',
+  apiBase: 'https://api.openai.com/v1',
+  schedule: {},
+  messages: [],
+  lifestyle: null,
+  streak: 0,
+  totalSessions: 0,
+  totalMinutes: 0,
+  weekGoal: 4,
+  installDismissed: false,
+  lastUpdated: null,
+};
+let state = loadState();
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return { ...defaultState, ...JSON.parse(raw) };
+  } catch (e) {}
+  return { ...defaultState };
+}
+function saveState() {
+  state.lastUpdated = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+/* ========================================================
+   Exercise library
+   ======================================================== */
+const EXERCISE_LIBRARY = [
+  { name: '慢跑', cat: '有氧', desc: '低强度持续跑，适合燃脂入门和心肺基础建设。建议保持能说话的强度。' },
+  { name: '间歇跑 HIIT', cat: '有氧', desc: '快慢交替冲刺，例如 1 分钟全力跑 + 2 分钟慢跑，循环 6-8 组。' },
+  { name: '跳绳', cat: '有氧', desc: '高效燃脂，10 分钟约等于 30 分钟慢跑，注意落地缓冲保护膝盖。' },
+  { name: '深蹲', cat: '力量', desc: '下肢之王，锻炼大腿、臀部和核心。注意膝盖与脚尖方向一致。' },
+  { name: '硬拉', cat: '力量', desc: '全身复合动作，强化后链肌群。建议先掌握髋关节铰链动作再加重量。' },
+  { name: '卧推', cat: '力量', desc: '胸部主要训练动作，肩胛后收下沉，控制下放速度。' },
+  { name: '引体向上', cat: '力量', desc: '背部和手臂训练，做不了可以从弹力带辅助或反向划船开始。' },
+  { name: '平板支撑', cat: '核心', desc: '核心稳定经典动作，保持身体一条直线，从 30 秒开始递增。' },
+  { name: '俄罗斯转体', cat: '核心', desc: '锻炼腹斜肌，坐姿身体后倾 45°，双手或负重左右转动。' },
+  { name: '卷腹', cat: '核心', desc: '腹直肌训练，用腹部力量收缩而不是用脖子发力。' },
+  { name: '瑜伽流', cat: '柔韧', desc: '串联体式动态拉伸，改善柔韧、平衡和呼吸控制。' },
+  { name: '猫牛式', cat: '柔韧', desc: '脊柱灵活性练习，对久坐人群非常友好，缓解腰背紧张。' },
+  { name: '泡沫轴放松', cat: '恢复', desc: '运动后筋膜放松，每个部位滚动 30-60 秒，避开关节。' },
+  { name: '静态拉伸', cat: '恢复', desc: '运动后保持每个拉伸动作 20-30 秒，帮助肌肉恢复和缓解酸痛。' },
+  { name: '游泳', cat: '有氧', desc: '低冲击全身运动，对关节友好，适合各类人群。' },
+  { name: '骑行', cat: '有氧', desc: '低冲击下肢主导有氧，可室内动感单车或户外公路。' },
+  { name: '俯卧撑', cat: '力量', desc: '徒手胸部训练，可从跪姿、上斜逐步过渡到标准。' },
+  { name: '弓步蹲', cat: '力量', desc: '单侧腿部训练，纠正左右不平衡，可加负重。' },
+];
+
+/* ========================================================
+   Navigation
+   ======================================================== */
+let currentPage = 'chat';
+let scheduleView = 'week';
+let weekOffset = 0;
+let libFilter = '全部';
+
+function switchPage(p) {
+  currentPage = p;
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === p));
+  if (p === 'schedule') renderSchedule();
+  else if (p === 'library') renderLibrary();
+  else if (p === 'progress') renderProgress();
+  else if (p === 'lifestyle') renderLifestyle();
+}
+
+function ymd(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function startOfWeek(d) {
+  const x = new Date(d);
+  const dow = x.getDay();
+  const diff = (dow + 6) % 7;
+  x.setDate(x.getDate() - diff);
+  x.setHours(0,0,0,0);
+  return x;
+}
+
+/* ========================================================
+   Schedule
+   ======================================================== */
+function renderSchedule() {
+  const today = new Date();
+  const todayStr = ymd(today);
+  const base = startOfWeek(today);
+  base.setDate(base.getDate() + weekOffset * 7);
+
+  let html = `
+    <div class="page-header">
+      <h2>${scheduleView === 'week' ? '本周计划' : '本月计划'}</h2>
+      <div class="view-toggle">
+        <button class="${scheduleView==='week'?'active':''}" onclick="scheduleView='week';renderSchedule()">周</button>
+        <button class="${scheduleView==='month'?'active':''}" onclick="scheduleView='month';renderSchedule()">月</button>
+      </div>
+    </div>
+    <div class="week-nav">
+      <button class="btn" onclick="weekOffset--;renderSchedule()">‹ 上${scheduleView === 'week' ? '周' : '月'}</button>
+      <button class="btn primary today-btn" onclick="weekOffset=0;renderSchedule()">今天</button>
+      <button class="btn" onclick="weekOffset++;renderSchedule()">下${scheduleView === 'week' ? '周' : '月'} ›</button>
+    </div>
+  `;
+
+  if (scheduleView === 'week') {
+    html += '<div class="day-list">';
+    const dayNames = ['周一','周二','周三','周四','周五','周六','周日'];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(base); d.setDate(base.getDate() + i);
+      const key = ymd(d);
+      const items = state.schedule[key] || [];
+      const isToday = key === todayStr;
+      html += `<div class="day-card ${isToday ? 'today' : ''}">
+        <div class="day-card-head">
+          <div class="day-name">${dayNames[i]}${isToday ? ' · 今天' : ''}</div>
+          <div class="day-date">${d.getMonth()+1}月${d.getDate()}日</div>
+        </div>`;
+      if (items.length === 0) {
+        html += `<div class="day-rest">休息日 / 暂无安排</div>`;
+      } else {
+        items.forEach((it, idx) => {
+          html += `<div class="workout-item ${it.done ? 'done' : ''}">
+            <div style="flex:1;min-width:0">
+              <div class="wname"><strong>${escapeHtml(it.name)}</strong></div>
+              <div class="meta">${it.duration ? it.duration + ' 分钟 · ' : ''}${it.intensity || ''}${it.type ? ' · ' + it.type : ''}</div>
+              ${it.notes ? `<div class="meta">${escapeHtml(it.notes)}</div>` : ''}
+            </div>
+            <button class="check-btn ${it.done?'done':''}" onclick="toggleDone('${key}', ${idx})">${it.done ? '✓' : '○'}</button>
+          </div>`;
+        });
+      }
+      html += `</div>`;
+    }
+    html += '</div>';
+  } else {
+    const month = new Date(today.getFullYear(), today.getMonth() + weekOffset, 1);
+    const monthName = `${month.getFullYear()}年${month.getMonth()+1}月`;
+    html = html.replace('本月计划', monthName);
+    const first = new Date(month);
+    const firstDow = (first.getDay() + 6) % 7;
+    const lastDay = new Date(month.getFullYear(), month.getMonth()+1, 0).getDate();
+    html += '<div class="month-header-row">';
+    ['一','二','三','四','五','六','日'].forEach(n => html += `<div>${n}</div>`);
+    html += '</div><div class="month-grid">';
+    for (let i = 0; i < firstDow; i++) html += `<div class="month-cell dim"></div>`;
+    for (let d = 1; d <= lastDay; d++) {
+      const dd = new Date(month.getFullYear(), month.getMonth(), d);
+      const key = ymd(dd);
+      const items = state.schedule[key] || [];
+      const isToday = key === todayStr;
+      const dots = items.slice(0,4).map(it => `<div class="dot ${it.done?'done':''}"></div>`).join('');
+      html += `<div class="month-cell ${isToday?'today':''}">
+        <div class="num">${d}</div>
+        <div class="dot-row">${dots}</div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  document.getElementById('page-schedule').innerHTML = html;
+}
+
+function toggleDone(dateKey, idx) {
+  const items = state.schedule[dateKey];
+  if (!items || !items[idx]) return;
+  const wasDone = items[idx].done;
+  items[idx].done = !wasDone;
+  if (!wasDone) {
+    state.totalSessions++;
+    state.totalMinutes += parseInt(items[idx].duration) || 0;
+  } else {
+    state.totalSessions = Math.max(0, state.totalSessions - 1);
+    state.totalMinutes = Math.max(0, state.totalMinutes - (parseInt(items[idx].duration) || 0));
+  }
+  computeStreak();
+  saveState();
+  renderSchedule();
+}
+
+function computeStreak() {
+  let streak = 0;
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const items = state.schedule[ymd(d)] || [];
+    const hasDone = items.some(it => it.done);
+    if (hasDone) streak++;
+    else if (i === 0) continue;
+    else break;
+  }
+  state.streak = streak;
+}
+
+/* ========================================================
+   Library
+   ======================================================== */
+function renderLibrary() {
+  const cats = ['全部', '有氧', '力量', '核心', '柔韧', '恢复'];
+  let html = `<div class="page-header"><h2>运动项目库</h2></div>`;
+  html += `<div class="filter-bar">`;
+  cats.forEach(c => {
+    html += `<div class="filter-chip ${libFilter===c?'active':''}" onclick="libFilter='${c}';renderLibrary()">${c}</div>`;
+  });
+  html += `</div><div class="library-list">`;
+  EXERCISE_LIBRARY
+    .filter(e => libFilter === '全部' || e.cat === libFilter)
+    .forEach(e => {
+      html += `<div class="exercise-card">
+        <h4>${e.name} <span class="cat">${e.cat}</span></h4>
+        <div class="desc">${e.desc}</div>
+      </div>`;
+    });
+  html += `</div>`;
+  document.getElementById('page-library').innerHTML = html;
+}
+
+/* ========================================================
+   Progress
+   ======================================================== */
+function renderProgress() {
+  computeStreak();
+  const totalPlanned = Object.values(state.schedule).flat().length;
+  const totalDone = Object.values(state.schedule).flat().filter(x => x.done).length;
+  const completion = totalPlanned ? Math.round(totalDone / totalPlanned * 100) : 0;
+
+  const today = new Date();
+  const weekStart = startOfWeek(today);
+  let weekDone = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+    const items = state.schedule[ymd(d)] || [];
+    weekDone += items.filter(it => it.done).length;
+  }
+  const weekPct = Math.min(100, Math.round(weekDone / state.weekGoal * 100));
+
+  let html = `<div class="page-header"><h2>训练数据</h2></div>`;
+  html += `<div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">🔥 连续训练</div><div class="stat-value">${state.streak} 天</div></div>
+    <div class="stat-card"><div class="stat-label">💪 累计次数</div><div class="stat-value">${state.totalSessions}</div></div>
+    <div class="stat-card"><div class="stat-label">⏱ 累计时长</div><div class="stat-value">${state.totalMinutes} 分</div></div>
+    <div class="stat-card"><div class="stat-label">📈 完成率</div><div class="stat-value">${completion}%</div></div>
+    <div class="stat-card full">
+      <div class="stat-label">本周 (目标 ${state.weekGoal} 次)</div>
+      <div class="stat-value">${weekDone} / ${state.weekGoal}</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${weekPct}%"></div></div>
+    </div>
+  </div>`;
+
+  const allItems = [];
+  Object.entries(state.schedule).forEach(([date, items]) => {
+    items.forEach(it => allItems.push({ date, ...it }));
+  });
+  allItems.sort((a, b) => b.date.localeCompare(a.date));
+  const recent = allItems.slice(0, 15);
+
+  html += `<div class="activity-feed"><h4>📝 近期活动</h4>`;
+  if (recent.length === 0) {
+    html += `<div class="empty-state">
+      <div class="big">🏃</div>
+      <p>还没有训练记录</p>
+      <button class="btn primary" onclick="switchPage('chat')">去和教练聊聊</button>
+    </div>`;
+  } else {
+    recent.forEach(it => {
+      html += `<div class="activity-item">
+        <div class="activity-dot" style="background:${it.done ? 'var(--good)' : 'var(--muted)'}"></div>
+        <div style="flex:1">
+          <div><strong>${escapeHtml(it.name)}</strong> <span style="color:var(--muted);font-size:11px">· ${it.date}</span></div>
+          <div style="color:var(--muted);font-size:11.5px">${it.duration || '-'}分钟 · ${it.intensity || '-'} · ${it.done ? '✅ 已完成' : '⏳ 待完成'}</div>
+        </div>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+  document.getElementById('page-progress').innerHTML = html;
+}
+
+/* ========================================================
+   Lifestyle
+   ======================================================== */
+function renderLifestyle() {
+  let html = `<div class="page-header"><h2>饮食 & 休息</h2></div>`;
+  if (!state.lifestyle) {
+    html += `<div class="empty-state">
+      <div class="big">🥗</div>
+      <p>让 AI 根据你的训练目标<br>给出配套的饮食和休息建议</p>
+      <button class="btn primary" onclick="switchPage('chat');setTimeout(()=>quickPrompt('请根据我的训练计划给出配套的饮食、睡眠和恢复建议'),200)">让 AI 生成建议</button>
+    </div>`;
+    document.getElementById('page-lifestyle').innerHTML = html;
+    return;
+  }
+  const ls = state.lifestyle;
+  html += `
+    <div class="lifestyle-card"><h4>🥗 营养与饮食</h4><p>${escapeHtml(ls.nutrition || '—')}</p></div>
+    <div class="lifestyle-card"><h4>😴 睡眠</h4><p>${escapeHtml(ls.sleep || '—')}</p></div>
+    <div class="lifestyle-card"><h4>♻ 恢复与拉伸</h4><p>${escapeHtml(ls.recovery || '—')}</p></div>
+    <div class="lifestyle-card"><h4>💧 补水</h4><p>${escapeHtml(ls.hydration || '—')}</p></div>
+  `;
+  document.getElementById('page-lifestyle').innerHTML = html;
+}
+
+/* ========================================================
+   Chat
+   ======================================================== */
+function renderChat() {
+  const body = document.getElementById('chatBody');
+  if (state.messages.length === 0) {
+    body.innerHTML = `<div class="msg bot">👋 我是你的 AI 运动教练 FitCoach。
+
+告诉我：
+• 目标（减脂 / 增肌 / 体态 / 备赛）
+• 每周次数 + 单次时长
+• 训练场地（家 / 健身房 / 户外）
+• 基础和有无伤病
+
+我会生成个性化周计划，并自动填入"日程"页面 📅</div>`;
+    return;
+  }
+  body.innerHTML = state.messages
+    .map(m => `<div class="msg ${m.role === 'user' ? 'user' : 'bot'}">${escapeHtml(m.content)}</div>`)
+    .join('');
+  body.scrollTop = body.scrollHeight;
+}
+function quickPrompt(text) {
+  document.getElementById('chatInput').value = text;
+  sendMsg();
+}
+async function sendMsg() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  state.messages.push({ role: 'user', content: text });
+  input.value = '';
+  renderChat();
+
+  const body = document.getElementById('chatBody');
+  const thinkEl = document.createElement('div');
+  thinkEl.className = 'msg bot thinking';
+  thinkEl.textContent = '教练正在思考…';
+  body.appendChild(thinkEl);
+  body.scrollTop = body.scrollHeight;
+
+  try {
+    let reply;
+    if (state.apiKey) {
+      reply = await callOpenAI(text);
+    } else {
+      reply = await localPlanner(text);
+    }
+    thinkEl.remove();
+    state.messages.push({ role: 'assistant', content: reply.text });
+    renderChat();
+    if (reply.schedule) applySchedule(reply.schedule);
+    if (reply.lifestyle) { state.lifestyle = reply.lifestyle; }
+    saveState();
+  } catch (e) {
+    thinkEl.remove();
+    state.messages.push({ role: 'assistant', content: '⚠️ 出错了：' + (e.message || e) });
+    renderChat();
+  }
+}
+
+async function callOpenAI(userText) {
+  const sys = `你是一个专业的运动教练 FitCoach。用户会和你聊运动训练目标。
+请生成回复时遵循以下规则：
+1. 用温暖、专业、鼓励的中文语气回复，简洁不啰嗦（手机端阅读）。
+2. 如果用户给出了足够信息，请在回复末尾附 JSON 代码块：
+\`\`\`json
+{
+  "schedule": [
+    {"day_offset": 0, "name": "晨跑", "duration": 30, "type": "有氧", "intensity": "中等", "notes": "保持能聊天强度"}
+  ],
+  "lifestyle": {
+    "nutrition": "...", "sleep": "...", "recovery": "...", "hydration": "..."
+  }
+}
+\`\`\`
+day_offset = 从今天起的第几天（0=今天，最多13）。
+3. 信息不足（缺目标 / 时间 / 场地 / 基础任一项）先追问 1-2 个关键问题，不生成 JSON。
+4. 不使用 emoji 外的其它图标。`;
+  const messages = [
+    { role: 'system', content: sys },
+    ...state.messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+  ];
+  const url = (state.apiBase || 'https://api.openai.com/v1').replace(/\/$/, '') + '/chat/completions';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + state.apiKey },
+    body: JSON.stringify({ model: state.apiModel, messages, temperature: 0.7 }),
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error(`API ${res.status}: ${t.slice(0,200)}`); }
+  const data = await res.json();
+  return parseReply(data.choices?.[0]?.message?.content || '');
+}
+function parseReply(content) {
+  const m = content.match(/```json\s*([\s\S]*?)```/);
+  let parsed = null;
+  if (m) { try { parsed = JSON.parse(m[1]); } catch (e) {} }
+  const text = content.replace(/```json[\s\S]*?```/, '').trim();
+  return { text: text || content, schedule: parsed?.schedule || null, lifestyle: parsed?.lifestyle || null };
+}
+
+async function localPlanner(text) {
+  await new Promise(r => setTimeout(r, 400));
+  let goal = 'general';
+  if (/减脂|减肥|瘦|燃脂/.test(text)) goal = 'fatloss';
+  else if (/增肌|长肌肉|力量/.test(text)) goal = 'muscle';
+  else if (/跑步|跑.*公里|马拉松|备赛/.test(text)) goal = 'running';
+  else if (/体态|肩颈|久坐|矫正/.test(text)) goal = 'posture';
+  const freqM = text.match(/每周\s*(\d+)\s*次|(\d+)\s*次\s*\/\s*周/);
+  const freq = freqM ? parseInt(freqM[1] || freqM[2]) : 4;
+  const durM = text.match(/(\d+)\s*分钟|(\d+)\s*小时/);
+  let duration = 45;
+  if (durM) { duration = durM[2] ? parseInt(durM[2]) * 60 : parseInt(durM[1]); }
+  const atHome = /在家|家里|徒手/.test(text);
+  const atGym = /健身房|器械/.test(text);
+  const outdoor = /户外|公园|跑道/.test(text);
+
+  let plans = [];
+  if (goal === 'fatloss') plans = [
+    { day_offset: 0, name: 'HIIT 间歇训练', type: '有氧', intensity: '高', notes: '热身5分 + 30秒冲刺/90秒走 x 8 + 拉伸' },
+    { day_offset: 2, name: '全身循环力量', type: '力量', intensity: '中高', notes: '深蹲/俯卧撑/弓步/平板 x 3 组' },
+    { day_offset: 4, name: '稳态有氧', type: '有氧', intensity: '中', notes: '慢跑/快走/骑行' },
+    { day_offset: 6, name: '核心+柔韧', type: '核心', intensity: '中', notes: '卷腹、转体、瑜伽流' },
+  ].slice(0, freq);
+  else if (goal === 'muscle') plans = [
+    { day_offset: 0, name: '推（胸/肩/三头）', type: '力量', intensity: '中高', notes: '卧推 4x8、肩推 4x10、下压 3x12' },
+    { day_offset: 1, name: '拉（背/二头）', type: '力量', intensity: '中高', notes: '硬拉 4x6、引体 4xMax、弯举 3x12' },
+    { day_offset: 3, name: '腿', type: '力量', intensity: '高', notes: '深蹲 5x5、罗马尼亚硬拉 4x8' },
+    { day_offset: 5, name: '推（变式）', type: '力量', intensity: '中', notes: '上斜卧推、飞鸟、侧平举' },
+  ].slice(0, freq);
+  else if (goal === 'running') plans = [
+    { day_offset: 0, name: '轻松跑', type: '有氧', intensity: '低', notes: '5-6 公里慢跑' },
+    { day_offset: 2, name: '间歇跑', type: '有氧', intensity: '高', notes: '400m x 6-8 组' },
+    { day_offset: 4, name: '力量+核心', type: '力量', intensity: '中', notes: '深蹲、臀桥、平板' },
+    { day_offset: 6, name: '长距离慢跑', type: '有氧', intensity: '低', notes: '8-10 公里' },
+  ].slice(0, freq);
+  else if (goal === 'posture') plans = [
+    { day_offset: 0, name: '肩颈拉伸', type: '柔韧', intensity: '低', notes: '颈部转动、肩绕环、胸肌拉伸' },
+    { day_offset: 1, name: '背部激活', type: '力量', intensity: '低', notes: 'YTW 字母伸展、面拉、飞鸟' },
+    { day_offset: 2, name: '核心稳定', type: '核心', intensity: '中', notes: '死虫式、鸟狗、平板' },
+    { day_offset: 3, name: '猫牛+髋打开', type: '柔韧', intensity: '低', notes: '猫牛 x10、鸽子式 90秒' },
+    { day_offset: 4, name: '反向划船', type: '力量', intensity: '中', notes: '抗驼背、强化肩胛后缩' },
+  ].slice(0, freq);
+  else plans = [
+    { day_offset: 0, name: '有氧训练', type: '有氧', intensity: '中', notes: '慢跑或骑行' },
+    { day_offset: 2, name: '力量训练', type: '力量', intensity: '中', notes: '深蹲/俯卧撑/划船循环' },
+    { day_offset: 4, name: '核心+柔韧', type: '核心', intensity: '中', notes: '平板、瑜伽流' },
+    { day_offset: 6, name: '主动恢复', type: '柔韧', intensity: '低', notes: '泡沫轴、拉伸' },
+  ].slice(0, freq);
+  plans.forEach(p => p.duration = duration);
+
+  const lifestyle = buildLifestyle(goal);
+  const goalName = { fatloss: '减脂塑形', muscle: '增肌增力', running: '跑步备赛', posture: '改善体态', general: '综合健康' }[goal];
+  const place = atGym ? '健身房' : atHome ? '居家' : outdoor ? '户外' : '灵活';
+
+  const intro = `好的，根据你的描述生成了一份计划 👇
+
+🎯 目标：${goalName}
+📆 频率：每周 ${freq} 次 · 单次 ${duration} 分钟
+📍 场地：${place}
+
+已自动填入"日程"页 📅
+配套饮食/休息建议在"生活"页 🥗
+
+💡 想调整？可以说"周三换成游泳"或"强度降一档"。
+
+（💡 当前为本地规则引擎。配置 OpenAI API 后会由真实 AI 生成。）`;
+  return { text: intro, schedule: plans, lifestyle };
+}
+
+function buildLifestyle(goal) {
+  const base = {
+    nutrition: '每天蛋白质 1.2-1.6g/kg 体重，主食以低 GI 为主（燕麦、糙米、薯类），蔬菜每餐一拳头，少糖少油炸。',
+    sleep: '保证每晚 7-9 小时高质量睡眠，固定入睡和起床时间，睡前 1 小时减少屏幕。',
+    recovery: '训练后做 10 分钟静态拉伸 + 泡沫轴放松；每周 1-2 天主动恢复日。',
+    hydration: '每天饮水 2-2.5L，训练每 15-20 分钟补 100-150ml。',
+  };
+  if (goal === 'fatloss') base.nutrition = '每日热量缺口 300-500 kcal；蛋白质 1.6-2.0g/kg；多吃绿叶蔬菜；减少精制糖和液体卡路里。';
+  else if (goal === 'muscle') { base.nutrition = '每日热量盈余 200-400 kcal；蛋白质 1.8-2.2g/kg，平均分配到每餐；训练后 1 小时内补蛋白+碳水。'; base.sleep = '至少 8 小时睡眠，深度睡眠是肌肉合成黄金期。'; }
+  else if (goal === 'running') { base.nutrition = '碳水 5-7g/kg；长距离前 2-3 小时补易消化碳水；跑后补电解质。'; base.hydration = '长跑每 20 分钟补水 150ml；高温加电解质。'; }
+  else if (goal === 'posture') base.recovery = '工作间隙起立活动 5 分钟；睡前肩颈胸椎放松 10 分钟；屏幕与眼平齐。';
+  return base;
+}
+
+function applySchedule(plans) {
+  if (!Array.isArray(plans)) return;
+  const today = new Date(); today.setHours(0,0,0,0);
+  plans.forEach(p => {
+    const d = new Date(today); d.setDate(today.getDate() + (parseInt(p.day_offset) || 0));
+    const key = ymd(d);
+    if (!state.schedule[key]) state.schedule[key] = [];
+    state.schedule[key].push({
+      name: p.name || '训练',
+      duration: p.duration || 30,
+      type: p.type || '',
+      intensity: p.intensity || '中',
+      notes: p.notes || '',
+      done: false,
+    });
+  });
+}
+
+/* ========================================================
+   Settings
+   ======================================================== */
+function openSettings() {
+  document.getElementById('apiKey').value = state.apiKey || '';
+  document.getElementById('apiModel').value = state.apiModel;
+  document.getElementById('apiBase').value = state.apiBase || '';
+  document.getElementById('weekGoal').value = state.weekGoal;
+  document.getElementById('settingsModal').classList.add('show');
+}
+function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
+function saveSettings() {
+  state.apiKey = document.getElementById('apiKey').value.trim();
+  state.apiModel = document.getElementById('apiModel').value;
+  state.apiBase = document.getElementById('apiBase').value.trim() || 'https://api.openai.com/v1';
+  state.weekGoal = parseInt(document.getElementById('weekGoal').value) || 4;
+  saveState();
+  updateApiStatus();
+  closeSettings();
+  if (currentPage === 'progress') renderProgress();
+}
+function updateApiStatus() {
+  const s = document.getElementById('apiStatus');
+  s.textContent = state.apiKey ? `✅ ${state.apiModel}` : '未配置 API · 本地模拟回复';
+  s.style.color = state.apiKey ? 'var(--good)' : 'var(--muted)';
+}
+function resetAll() {
+  if (!confirm('清空所有数据？')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = { ...defaultState };
+  renderChat();
+  closeSettings();
+  switchPage('chat');
+  updateApiStatus();
+}
+
+/* Utils */
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
+}
+
+/* Init */
+document.getElementById('chatInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+document.getElementById('settingsModal').addEventListener('click', (e) => {
+  if (e.target.id === 'settingsModal') closeSettings();
+});
+
+/* Install prompt */
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!state.installDismissed && !window.matchMedia('(display-mode: standalone)').matches) {
+    setTimeout(() => document.getElementById('installHint').classList.add('show'), 2000);
+  }
+});
+document.getElementById('installHint').addEventListener('click', async (e) => {
+  if (e.target.classList.contains('close')) return;
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    document.getElementById('installHint').classList.remove('show');
+  }
+});
+function dismissInstall() {
+  document.getElementById('installHint').classList.remove('show');
+  state.installDismissed = true; saveState();
+}
+// iOS install hint
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+if (isIOS && !isStandalone && !state.installDismissed) {
+  setTimeout(() => {
+    const hint = document.getElementById('installHint');
+    hint.querySelector('span').innerHTML = '📱 点击 Safari 底部 <strong>分享 → 添加到主屏幕</strong>';
+    hint.classList.add('show');
+  }, 2500);
+}
+
+/* Service worker */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+renderChat();
+updateApiStatus();
+</script>
+</body>
+</html>
